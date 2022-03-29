@@ -12,6 +12,11 @@
         <h1 class="text-primary">Plantilla main.hbs</h1>
 
         {{> Navbar}}
+
+        {{#each mensajes}}
+            <div class="alert alert-dark mb-2">{{this.msg}}</div>
+        {{/each}}
+
         {{{body}}}
     </div>
 
