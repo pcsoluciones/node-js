@@ -23,6 +23,7 @@ const corsOptions = {
 }
 app.use(cors())
 
+app.set("trust proxy", 1)       // necesario para que funcione en heroku
 
 app.use(
     session({
