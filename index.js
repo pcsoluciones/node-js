@@ -1,28 +1,45 @@
 const express = require("express")
 const session = require('express-session')
+const MongoStore = require("connect-mongo");
 const flash = require('connect-flash')          // es un tipo de sesion que solo vive una vez
 const passport = require('passport')
+const mongoSanitize = require('express-mongo-sanitize') // evita inyecciones a mongodb
+var cors = require('cors')
 const { create } = require("express-handlebars");
 const csrf = require('csurf')
 const User = require("./models/User");
 //const res = require("express/lib/response");
 
 require('dotenv').config()
-require('./database/db')
+// require('./database/db')
+const clienteDB = require('./database/db');
 
 const app = express()
 
-app.use(                        // middleware
+const corsOptions = {
+    credentials: true,
+    origin: process.env.PATHHEROKU || "*",
+    methods: ['GET', 'POST']
+}
+app.use(cors())
+
+
+app.use(
     session({
-        secret: "keyboard cat",
+        secret: process.env.SECRETSESSION,
         resave: false,
         saveUninitialized:  false,
-        name: "secret-name-blabla"
+        name: "session-user",
+        store : MongoStore.create({
+            clientPromise: clienteDB,
+            dbName: process.env.DBNAME
+        }),
+        cookie: { secure: process.env.MODO === 'production', 
+                maxAge: 30 * 24 * 60 * 60 * 1000 }
     })
 )
 
 app.use(flash())
-
 
 // PASSPORT
 app.use(passport.initialize())
@@ -60,6 +77,9 @@ app.use(express.urlencoded({extended:true}))        // para habilitarla lectura 
 
 
 app.use(csrf())         // habilita protecciones de token para los formularios
+
+app.use(mongoSanitize())    // para evitar inyeccciones a mongo
+
 
 // creamos un middleware para generar el token csrf de forma global
 app.use((req, res, next) => {
